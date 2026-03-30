@@ -1,0 +1,17 @@
+{
+  "name": "@reviewscope/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "reviewscope": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --dts --watch"
+  },
+  "dependencies": {
+    "@reviewscope/core": "*",
+    "commander": "^13.0.0",
+    "chalk": "^5.4.0"
+  }
+}
