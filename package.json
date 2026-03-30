@@ -1,5 +1,6 @@
 {
   "name": "reviewscope",
+  "description": "Human Attention Router for Code Review — tells you which parts of a PR need human eyes and which are safe to skip",
   "private": true,
   "workspaces": [
     "packages/*"

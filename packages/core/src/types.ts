@@ -65,18 +65,12 @@ export interface FusionWeights {
   changeClassification: number;
   blastRadius: number;
   testCoverageGap: number;
-  historicalRisk: number;
-  aiDetection: number;
-  complexityDelta: number;
 }
 
 export const DEFAULT_WEIGHTS: FusionWeights = {
-  changeClassification: 0.30,
-  blastRadius: 0.25,
-  testCoverageGap: 0.25,
-  historicalRisk: 0.10,
-  aiDetection: 0.10,
-  complexityDelta: 0.00, // Phase 1: not yet implemented
+  changeClassification: 0.35,
+  blastRadius: 0.30,
+  testCoverageGap: 0.35,
 };
 
 export const DEFAULT_THRESHOLDS = {
