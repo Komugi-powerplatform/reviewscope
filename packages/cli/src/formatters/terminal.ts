@@ -1,4 +1,4 @@
-import type { ReviewScopeResult, AttentionScore } from '@reviewscope/core';
+import type { ReviewScopeResult, AttentionScore } from '../../../core/src/types.js';
 
 const COLORS = {
   reset: '\x1b[0m',

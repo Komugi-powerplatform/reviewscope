@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { analyze } from '@reviewscope/core';
+import { analyze } from '../../core/src/index.js';
 import { formatTerminal } from './formatters/terminal.js';
 
 async function main() {
@@ -13,8 +13,10 @@ async function main() {
 
   const targetArg = args.find(a => !a.startsWith('-'));
 
-  if (process.stdin.isTTY === false && !targetArg) {
-    // Piped input: cat diff | reviewscope
+  const stdinFlag = args.includes('--stdin');
+
+  if (stdinFlag || process.stdin.isTTY === false) {
+    // Piped input: cat diff | reviewscope --stdin
     const chunks: Buffer[] = [];
     for await (const chunk of process.stdin) {
       chunks.push(chunk as Buffer);
@@ -24,16 +26,24 @@ async function main() {
   } else {
     // Git-based diff
     repoRoot = resolve('.');
-    const target = targetArg ?? 'HEAD~1';
+    const target = targetArg ?? 'HEAD';
 
     try {
-      diffText = execSync(`git diff ${target}`, {
+      // Try staged changes first, then diff against target
+      diffText = execSync(`git diff --cached`, {
         cwd: repoRoot,
         encoding: 'utf-8',
         maxBuffer: 50 * 1024 * 1024,
       });
+      if (!diffText.trim()) {
+        diffText = execSync(`git diff ${target}`, {
+          cwd: repoRoot,
+          encoding: 'utf-8',
+          maxBuffer: 50 * 1024 * 1024,
+        });
+      }
     } catch (err) {
-      console.error(`Failed to get diff for "${target}". Are you in a git repository?`);
+      console.error(`Failed to get diff. Are you in a git repository?`);
       process.exit(1);
     }
   }
