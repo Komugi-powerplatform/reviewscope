@@ -5,9 +5,6 @@ const WEIGHT_KEY_MAP: Record<string, keyof FusionWeights> = {
   changeClassification: 'changeClassification',
   blastRadius: 'blastRadius',
   testCoverageGap: 'testCoverageGap',
-  historicalRisk: 'historicalRisk',
-  aiDetection: 'aiDetection',
-  complexityDelta: 'complexityDelta',
 };
 
 export function fuseSignals(
