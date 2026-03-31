@@ -5,20 +5,23 @@
 > Skip the imports. Focus on the logic changes. Save 40% of your review time.
 
 ```
-ReviewScope: 3 of 14 hunks need human review (estimated 6 min)
+ReviewScope  3 of 14 hunks need human review (6 min)
+             ██▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░  █ CRITICAL (1)  ▓ REVIEW (2)  ░ AUTO-OK (11)
 
 🔴 [CRITICAL] src/auth/session.ts:45-62  (score: 87)
-  ├─ Change type: behavioral (auth logic modification)
-  ├─ Blast radius: 7 downstream consumers
-  ├─ Test coverage: no test file found
+  ├─ Change type: behavioral
+  ├─ 7 downstream consumers — high blast radius
+  ├─ No test file found for this module
   └─ Estimated review: 4 min
 
 🟡 [REVIEW] src/api/routes.ts:120-135  (score: 52)
-  ├─ Change type: behavioral (new endpoint)
-  ├─ Blast radius: 2 downstream consumers
+  ├─ Change type: behavioral
+  ├─ 2 downstream consumer(s)
   └─ Estimated review: 2 min
 
 🟢 [AUTO-OK] 11 hunks skipped: cosmetic (6), structural (3), behavioral (2)
+
+⏱  Estimated time saved: ~18 min · Analyzed in 23ms · No API · No LLM
 ```
 
 ## What is this?
