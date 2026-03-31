@@ -39,9 +39,21 @@ function isWhitespaceLine(line: string): boolean {
   return line.trim() === '';
 }
 
-function hasBehavioralChange(oldLines: string[], newLines: string[]): boolean {
-  const oldBehavioral = oldLines.filter(l => !isWhitespaceLine(l) && !isCommentLine(l, 'typescript'));
-  const newBehavioral = newLines.filter(l => !isWhitespaceLine(l) && !isCommentLine(l, 'typescript'));
+function hasStringLiteralChange(oldLines: string[], newLines: string[]): boolean {
+  const extractStrings = (lines: string[]): string[] =>
+    lines.flatMap(l => {
+      const matches = l.match(/(['"`])(?:(?!\1).)*\1/g);
+      return matches ?? [];
+    });
+
+  const oldStrings = extractStrings(oldLines).sort().join('|');
+  const newStrings = extractStrings(newLines).sort().join('|');
+  return oldStrings !== newStrings;
+}
+
+function hasBehavioralChange(oldLines: string[], newLines: string[], language: string): boolean {
+  const oldBehavioral = oldLines.filter(l => !isWhitespaceLine(l) && !isCommentLine(l, language));
+  const newBehavioral = newLines.filter(l => !isWhitespaceLine(l) && !isCommentLine(l, language));
 
   if (oldBehavioral.length !== newBehavioral.length) return true;
 
@@ -71,6 +83,9 @@ function hasBehavioralChange(oldLines: string[], newLines: string[]): boolean {
       if (oldStructural !== newStructural) return true;
     }
   }
+
+  // Check for string literal changes (API URLs, config values, etc.)
+  if (hasStringLiteralChange(oldBehavioral, newBehavioral)) return true;
 
   return false;
 }
@@ -105,7 +120,7 @@ export function classifyChange(hunk: DiffHunk): ChangeType {
   }
 
   // Check for behavioral changes
-  if (hasBehavioralChange(oldCode, newCode)) {
+  if (hasBehavioralChange(oldCode, newCode, lang)) {
     return 'behavioral';
   }
 
