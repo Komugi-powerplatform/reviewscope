@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { join, relative, dirname } from 'node:path';
+import { join, dirname } from 'node:path';
 import type { DiffHunk, SignalResult, AnalysisContext } from '../types.js';
 
 const IMPORT_EXTRACT_PATTERNS: Record<string, RegExp[]> = {
@@ -24,6 +24,16 @@ const IMPORT_EXTRACT_PATTERNS: Record<string, RegExp[]> = {
   ],
 };
 
+const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.java']);
+
+function detectLangFromExt(ext: string): string {
+  if (ext === '.py') return 'python';
+  if (ext === '.go') return 'go';
+  if (ext === '.rs') return 'rust';
+  if (ext === '.java') return 'java';
+  return 'typescript';
+}
+
 function extractImports(content: string, language: string): string[] {
   const patterns = IMPORT_EXTRACT_PATTERNS[language] ?? IMPORT_EXTRACT_PATTERNS.typescript;
   const imports: string[] = [];
@@ -39,80 +49,81 @@ function extractImports(content: string, language: string): string[] {
   return imports;
 }
 
-function resolveImportToFile(importPath: string, fromFile: string, allFiles: string[]): string | null {
-  // Handle relative imports
-  if (importPath.startsWith('.')) {
-    const dir = dirname(fromFile);
-    const candidates = [
-      join(dir, importPath),
-      join(dir, importPath + '.ts'),
-      join(dir, importPath + '.tsx'),
-      join(dir, importPath + '.js'),
-      join(dir, importPath + '.py'),
-      join(dir, importPath, 'index.ts'),
-      join(dir, importPath, 'index.js'),
-    ];
-    return candidates.find(c => allFiles.includes(c)) ?? null;
-  }
+function resolveImportToFile(importPath: string, fromFile: string, allFilesSet: Set<string>): string | null {
+  if (!importPath.startsWith('.')) return null;
 
-  // Non-relative imports are typically external packages — skip
-  return null;
+  const dir = dirname(fromFile);
+  const candidates = [
+    join(dir, importPath),
+    join(dir, importPath + '.ts'),
+    join(dir, importPath + '.tsx'),
+    join(dir, importPath + '.js'),
+    join(dir, importPath + '.py'),
+    join(dir, importPath, 'index.ts'),
+    join(dir, importPath, 'index.js'),
+  ];
+  return candidates.find(c => allFilesSet.has(c)) ?? null;
 }
 
-export function extractChangedSymbols(hunk: DiffHunk): string[] {
-  const newLines = hunk.newContent.split('\n');
-  const symbols: string[] = [];
+// Shared cache across all blast-radius calls in a single analysis run
+const blastRadiusCache = new Map<string, number>();
+const fileContentCache = new Map<string, string>();
 
-  for (const line of newLines) {
-    // Extract exported function/class/const names
-    const exportMatch = line.match(/export\s+(?:default\s+)?(?:function|class|const|let|var|type|interface)\s+(\w+)/);
-    if (exportMatch) symbols.push(exportMatch[1]);
-
-    // Python: function/class definitions
-    const pyMatch = line.match(/^(?:def|class)\s+(\w+)/);
-    if (pyMatch) symbols.push(pyMatch[1]);
-
-    // Go: exported functions (capitalized)
-    const goMatch = line.match(/^func\s+(\w+)/);
-    if (goMatch) symbols.push(goMatch[1]);
-  }
-
-  return [...new Set(symbols)];
+export function clearBlastRadiusCache(): void {
+  blastRadiusCache.clear();
+  fileContentCache.clear();
 }
 
 async function buildImportGraph(
   changedFile: string,
   context: AnalysisContext,
 ): Promise<number> {
+  // Return cached result if already computed for this file
+  const cached = blastRadiusCache.get(changedFile);
+  if (cached !== undefined) return cached;
+
   let consumerCount = 0;
   const changedBasename = changedFile.replace(/\.\w+$/, '');
+  const allFilesSet = new Set(context.allFiles);
 
-  // Check each file in the repo for imports of the changed file
-  for (const file of context.allFiles) {
-    if (file === changedFile) continue;
+  // Only check source files
+  const sourceFiles = context.allFiles.filter(f => {
+    const ext = f.slice(f.lastIndexOf('.'));
+    return SOURCE_EXTENSIONS.has(ext);
+  });
 
-    // Quick filter: only check files with matching language
-    const ext = file.slice(file.lastIndexOf('.'));
-    if (!['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.java'].includes(ext)) continue;
+  // Read files with concurrency limit (batch of 20)
+  const BATCH_SIZE = 20;
+  for (let i = 0; i < sourceFiles.length; i += BATCH_SIZE) {
+    const batch = sourceFiles.slice(i, i + BATCH_SIZE);
+    await Promise.all(batch.map(async (file) => {
+      if (file === changedFile) return;
 
-    try {
-      const content = await readFile(join(context.repoRoot, file), 'utf-8');
-      const imports = extractImports(content, ext.startsWith('.ts') || ext.startsWith('.js') ? 'typescript' : 'python');
+      try {
+        let content = fileContentCache.get(file);
+        if (content === undefined) {
+          content = await readFile(join(context.repoRoot, file), 'utf-8');
+          fileContentCache.set(file, content);
+        }
 
-      for (const imp of imports) {
-        if (imp.startsWith('.')) {
-          const resolved = resolveImportToFile(imp, file, context.allFiles);
+        const ext = file.slice(file.lastIndexOf('.'));
+        const lang = detectLangFromExt(ext);
+        const imports = extractImports(content, lang);
+
+        for (const imp of imports) {
+          const resolved = resolveImportToFile(imp, file, allFilesSet);
           if (resolved === changedFile || resolved === changedBasename) {
             consumerCount++;
             break;
           }
         }
+      } catch {
+        // Skip unreadable files
       }
-    } catch {
-      // Skip unreadable files
-    }
+    }));
   }
 
+  blastRadiusCache.set(changedFile, consumerCount);
   return consumerCount;
 }
 
