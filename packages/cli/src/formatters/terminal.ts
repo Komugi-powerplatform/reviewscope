@@ -11,21 +11,29 @@ const COLORS = {
   white: '\x1b[37m',
 };
 
-function levelColor(level: string): string {
-  if (level === 'CRITICAL') return COLORS.red;
-  if (level === 'REVIEW') return COLORS.yellow;
-  return COLORS.green;
-}
-
 function levelIcon(level: string): string {
   if (level === 'CRITICAL') return '🔴';
   if (level === 'REVIEW') return '🟡';
   return '🟢';
 }
 
+function renderBar(critical: number, review: number, autoOk: number, width = 30): string {
+  const total = critical + review + autoOk;
+  if (total === 0) return '';
+  const cWidth = Math.max(critical > 0 ? 1 : 0, Math.round((critical / total) * width));
+  const rWidth = Math.max(review > 0 ? 1 : 0, Math.round((review / total) * width));
+  const aWidth = Math.max(0, width - cWidth - rWidth);
+  return (
+    `${COLORS.red}${'█'.repeat(cWidth)}${COLORS.yellow}${'▓'.repeat(rWidth)}${COLORS.green}${'░'.repeat(aWidth)}${COLORS.reset}` +
+    `  ${COLORS.red}█ CRITICAL (${critical})${COLORS.reset}` +
+    `  ${COLORS.yellow}▓ REVIEW (${review})${COLORS.reset}` +
+    `  ${COLORS.green}░ AUTO-OK (${autoOk})${COLORS.reset}`
+  );
+}
+
 function formatHunk(item: AttentionScore): string {
-  const color = levelColor(item.level);
   const icon = levelIcon(item.level);
+  const color = item.level === 'CRITICAL' ? COLORS.red : item.level === 'REVIEW' ? COLORS.yellow : COLORS.green;
   const lines: string[] = [];
 
   lines.push(
@@ -47,21 +55,31 @@ function formatHunk(item: AttentionScore): string {
   return lines.join('\n');
 }
 
+function computeTimeSaved(result: ReviewScopeResult): number {
+  const totalLines = result.hunks.reduce(
+    (sum, h) => sum + Math.max(1, h.hunk.endLine - h.hunk.startLine + 1), 0
+  );
+  const naiveMinutes = Math.round(totalLines / 25 * 1.5);
+  return Math.max(0, naiveMinutes - result.summary.estimatedTotalMinutes);
+}
+
 export function formatTerminal(result: ReviewScopeResult): string {
-  const { summary } = result;
+  const { summary, metadata } = result;
   const lines: string[] = [];
 
-  // Header
   const needReview = summary.criticalCount + summary.reviewCount;
+
+  // Header with ratio bar
   lines.push('');
   lines.push(
-    `${COLORS.bold}ReviewScope:${COLORS.reset} ` +
+    `${COLORS.bold}ReviewScope${COLORS.reset}  ` +
     `${needReview} of ${summary.totalHunks} hunks need human review ` +
-    `${COLORS.dim}(estimated ${summary.estimatedTotalMinutes} min)${COLORS.reset}`
+    `${COLORS.dim}(${summary.estimatedTotalMinutes} min)${COLORS.reset}`
   );
+  lines.push(`             ${renderBar(summary.criticalCount, summary.reviewCount, summary.autoOkCount)}`);
   lines.push('');
 
-  // CRITICAL and REVIEW hunks — show details
+  // CRITICAL and REVIEW hunks
   const flagged = result.hunks.filter(h => h.level !== 'AUTO-OK');
   for (const item of flagged) {
     lines.push(formatHunk(item));
@@ -77,11 +95,22 @@ export function formatTerminal(result: ReviewScopeResult): string {
       fileGroups.set(key, (fileGroups.get(key) ?? 0) + 1);
     }
     const breakdown = [...fileGroups.entries()].map(([type, count]) => `${type} (${count})`).join(', ');
-    lines.push(
-      `${COLORS.green}🟢 [AUTO-OK]${COLORS.reset} ${autoOk.length} hunks skipped: ${breakdown}`
-    );
+    lines.push(`${COLORS.green}🟢 [AUTO-OK]${COLORS.reset} ${autoOk.length} hunks skipped: ${breakdown}`);
     lines.push('');
   }
+
+  // Footer with time saved and performance
+  const timeSaved = computeTimeSaved(result);
+  const analysisTime = metadata.analysisTimeMs < 1000
+    ? `${metadata.analysisTimeMs}ms`
+    : `${(metadata.analysisTimeMs / 1000).toFixed(1)}s`;
+
+  if (timeSaved > 0) {
+    lines.push(`${COLORS.dim}⏱  Estimated time saved: ~${timeSaved} min · Analyzed in ${analysisTime} · No API · No LLM${COLORS.reset}`);
+  } else {
+    lines.push(`${COLORS.dim}⏱  Analyzed in ${analysisTime} · No API · No LLM${COLORS.reset}`);
+  }
+  lines.push('');
 
   return lines.join('\n');
 }
