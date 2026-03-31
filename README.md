@@ -46,23 +46,20 @@ Every PR has hunks that are just import reordering, comment updates, or rename r
 ## Quick Start
 
 ```bash
-# Clone and install
-git clone https://github.com/Komugi-powerplatform/reviewscope
-cd reviewscope
-npm install
+# Zero install — run instantly in any git repo
+npx reviewscope
 
-# Analyze staged changes in any repo
-cd /path/to/your-repo
-git diff --cached | npx tsx /path/to/reviewscope/packages/cli/src/index.ts --stdin
+# Compare against a branch
+npx reviewscope main
 
-# Or analyze from within the reviewscope repo itself
-npx tsx packages/cli/src/index.ts
+# Pipe any diff
+git diff HEAD~5 | npx reviewscope --stdin
 
-# JSON output for CI integration
-git diff main...HEAD | npx tsx /path/to/reviewscope/packages/cli/src/index.ts --stdin --json
+# JSON output for CI
+npx reviewscope --json
 ```
 
-> **npm package coming soon.** Once published, usage will be simply `npx reviewscope`.
+No config. No API key. No account.
 
 ## How It Works
 

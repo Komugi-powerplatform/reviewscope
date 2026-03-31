@@ -1,6 +1,7 @@
 {
   "name": "@reviewscope/core",
   "version": "0.1.0",
+  "description": "Signal engine for ReviewScope — classifies diff hunks by attention priority",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,10 +11,22 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "dev": "tsup src/index.ts --format esm --dts --watch"
   },
+  "keywords": ["code-review", "attention", "diff", "signals", "cli"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Komugi-powerplatform/reviewscope",
+    "directory": "packages/core"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {}
-
 }
