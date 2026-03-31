@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { analyze } from '../../core/src/index.js';
+import { analyze } from '@reviewscope/core';
 import { formatTerminal } from './formatters/terminal.js';
 
 async function main() {
