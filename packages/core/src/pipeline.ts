@@ -6,6 +6,24 @@ import { analyzeTestCoverage } from './signals/test-coverage.js';
 import { buildAttentionScore } from './fusion/attention-scorer.js';
 import type { ReviewScopeResult, AnalysisContext, DiffHunk, SignalResult } from './types.js';
 
+const AUTO_SKIP_PATTERNS = [
+  /^package-lock\.json$/,
+  /^yarn\.lock$/,
+  /^pnpm-lock\.yaml$/,
+  /^Gemfile\.lock$/,
+  /^Cargo\.lock$/,
+  /^go\.sum$/,
+  /^composer\.lock$/,
+  /^poetry\.lock$/,
+  /node_modules\//,
+  /^\.git\//,
+  /\.(png|jpg|jpeg|gif|svg|ico|webp|bmp|woff|woff2|ttf|eot|mp3|mp4|zip|tar|gz|exe|dll|so|dylib)$/i,
+];
+
+function shouldSkipFile(filePath: string): boolean {
+  return AUTO_SKIP_PATTERNS.some(p => p.test(filePath));
+}
+
 async function analyzeHunk(hunk: DiffHunk, context: AnalysisContext): Promise<SignalResult[]> {
   const results = await Promise.all([
     analyzeChangeClassification(hunk, context),
@@ -40,7 +58,10 @@ export async function analyze(options: AnalyzeOptions): Promise<ReviewScopeResul
   const start = performance.now();
 
   const files = parseDiff(options.diffText);
-  const hunks = flattenHunks(files);
+  const allHunks = flattenHunks(files);
+
+  // Filter out lock files, binaries, node_modules, etc.
+  const hunks = allHunks.filter(h => !shouldSkipFile(h.file));
 
   if (hunks.length === 0) {
     return {

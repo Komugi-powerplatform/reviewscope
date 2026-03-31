@@ -173,17 +173,33 @@ const SCORE_MAP: Record<ChangeType, number> = {
   behavioral: 0.80,
 };
 
+const NON_CODE_EXTENSIONS = new Set([
+  '.md', '.mdx', '.txt', '.json', '.yml', '.yaml', '.toml',
+  '.xml', '.html', '.css', '.scss', '.less', '.svg',
+  '.lock', '.config', '.cfg', '.ini', '.env',
+]);
+
+function isNonCodeFile(filePath: string): boolean {
+  const ext = filePath.slice(filePath.lastIndexOf('.'));
+  return NON_CODE_EXTENSIONS.has(ext);
+}
+
 export async function analyzeChangeClassification(
   hunk: DiffHunk,
   _context: AnalysisContext,
 ): Promise<SignalResult> {
   const changeType = classifyChange(hunk);
+  const nonCode = isNonCodeFile(hunk.file);
+
+  // Non-code files get reduced confidence and score cap
+  const confidence = nonCode ? 0.40 : 0.85;
+  const score = nonCode ? Math.min(SCORE_MAP[changeType], 0.30) : SCORE_MAP[changeType];
 
   return {
     signalName: 'changeClassification',
-    score: SCORE_MAP[changeType],
-    confidence: 0.85,
-    reason: `Change type: ${changeType}`,
-    metadata: { changeType },
+    score,
+    confidence,
+    reason: nonCode ? `Non-code file (${changeType})` : `Change type: ${changeType}`,
+    metadata: { changeType, nonCodeFile: nonCode },
   };
 }
