@@ -53,14 +53,17 @@ function resolveImportToFile(importPath: string, fromFile: string, allFilesSet: 
   if (!importPath.startsWith('.')) return null;
 
   const dir = dirname(fromFile);
+  // Strip .js/.jsx extension (TypeScript uses .js in imports for .ts files on disk)
+  const stripped = importPath.replace(/\.(js|jsx)$/, '');
+
   const candidates = [
     join(dir, importPath),
-    join(dir, importPath + '.ts'),
-    join(dir, importPath + '.tsx'),
-    join(dir, importPath + '.js'),
-    join(dir, importPath + '.py'),
-    join(dir, importPath, 'index.ts'),
-    join(dir, importPath, 'index.js'),
+    join(dir, stripped + '.ts'),
+    join(dir, stripped + '.tsx'),
+    join(dir, stripped + '.js'),
+    join(dir, stripped + '.py'),
+    join(dir, stripped, 'index.ts'),
+    join(dir, stripped, 'index.js'),
   ];
   return candidates.find(c => allFilesSet.has(c)) ?? null;
 }

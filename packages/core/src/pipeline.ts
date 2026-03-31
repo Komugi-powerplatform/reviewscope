@@ -18,7 +18,7 @@ async function analyzeHunk(hunk: DiffHunk, context: AnalysisContext): Promise<Si
 function listRepoFiles(repoRoot: string): string[] {
   try {
     const output = execSync('git ls-files', { cwd: repoRoot, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
-    return output.trim().split('\n').filter(Boolean);
+    return output.trim().split('\n').filter(f => f && !f.startsWith('node_modules/'));
   } catch {
     return [];
   }
