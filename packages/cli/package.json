@@ -1,15 +1,29 @@
 {
-  "name": "@reviewscope/cli",
+  "name": "reviewscope",
   "version": "0.1.0",
+  "description": "Human Attention Router for Code Review — tells you which parts of a PR need human eyes",
   "type": "module",
   "bin": {
     "reviewscope": "dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts",
+    "build": "tsup",
     "dev": "tsup src/index.ts --format esm --dts --watch"
   },
+  "keywords": ["code-review", "attention", "diff", "cli", "pr", "github"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Komugi-powerplatform/reviewscope",
+    "directory": "packages/cli"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
-    "@reviewscope/core": "*"
+    "@reviewscope/core": "0.1.0"
   }
 }

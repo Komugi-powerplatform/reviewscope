@@ -1,11 +1,47 @@
-#!/usr/bin/env node
 import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { analyze } from '@reviewscope/core';
 import { formatTerminal } from './formatters/terminal.js';
 
+const VERSION = '0.1.0';
+
+const HELP = `
+ReviewScope — Human Attention Router for Code Review
+
+Usage:
+  reviewscope                   Analyze staged changes (or unstaged if none staged)
+  reviewscope <target>          Analyze diff against target (branch, commit, HEAD~N)
+  reviewscope --stdin           Read unified diff from stdin
+  git diff main | reviewscope --stdin
+
+Options:
+  --stdin     Read diff from stdin instead of git
+  --json      Output as JSON (for CI integration)
+  --help      Show this help message
+  --version   Show version
+
+Examples:
+  reviewscope main              Compare current branch against main
+  reviewscope HEAD~3            Analyze last 3 commits
+  git diff --cached | reviewscope --stdin   Pipe staged diff
+
+Exit codes:
+  0   No CRITICAL hunks found
+  1   CRITICAL hunks found (use in CI to block merges)
+`;
+
 async function main() {
   const args = process.argv.slice(2);
+
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(HELP);
+    process.exit(0);
+  }
+
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log(`reviewscope ${VERSION}`);
+    process.exit(0);
+  }
 
   // Determine diff source
   let diffText: string;
