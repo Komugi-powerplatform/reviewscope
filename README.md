@@ -46,16 +46,23 @@ Every PR has hunks that are just import reordering, comment updates, or rename r
 ## Quick Start
 
 ```bash
-# Analyze staged changes
-cd your-repo
-git diff --cached | npx tsx path/to/reviewscope/packages/cli/src/index.ts --stdin
+# Clone and install
+git clone https://github.com/Komugi-powerplatform/reviewscope
+cd reviewscope
+npm install
 
-# Analyze against a branch
-git diff main...HEAD | npx tsx path/to/reviewscope/packages/cli/src/index.ts --stdin
+# Analyze staged changes in any repo
+cd /path/to/your-repo
+git diff --cached | npx tsx /path/to/reviewscope/packages/cli/src/index.ts --stdin
 
-# JSON output for CI
-git diff --cached | npx tsx path/to/reviewscope/packages/cli/src/index.ts --stdin --json
+# Or analyze from within the reviewscope repo itself
+npx tsx packages/cli/src/index.ts
+
+# JSON output for CI integration
+git diff main...HEAD | npx tsx /path/to/reviewscope/packages/cli/src/index.ts --stdin --json
 ```
+
+> **npm package coming soon.** Once published, usage will be simply `npx reviewscope`.
 
 ## How It Works
 
@@ -93,11 +100,13 @@ TypeScript, JavaScript, Python (for import graph analysis). Other languages get 
 ## Development
 
 ```bash
-git clone https://github.com/your-username/reviewscope
+git clone https://github.com/Komugi-powerplatform/reviewscope
 cd reviewscope
 npm install
-npm test          # 20 tests
+npm test
 ```
+
+Requires Node.js 18+.
 
 ## Roadmap
 

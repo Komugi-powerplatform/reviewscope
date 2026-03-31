@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { parseDiff, flattenHunks } from './diff-parser.js';
 import { analyzeChangeClassification } from './signals/change-classifier.js';
-import { analyzeBlastRadius } from './signals/blast-radius.js';
+import { analyzeBlastRadius, clearBlastRadiusCache } from './signals/blast-radius.js';
 import { analyzeTestCoverage } from './signals/test-coverage.js';
 import { buildAttentionScore } from './fusion/attention-scorer.js';
 import type { ReviewScopeResult, AnalysisContext, DiffHunk, SignalResult } from './types.js';
@@ -35,6 +35,8 @@ export interface AnalyzeOptions {
 }
 
 export async function analyze(options: AnalyzeOptions): Promise<ReviewScopeResult> {
+  // Clear caches from previous runs
+  clearBlastRadiusCache();
   const start = performance.now();
 
   const files = parseDiff(options.diffText);
