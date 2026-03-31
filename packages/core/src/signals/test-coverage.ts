@@ -52,12 +52,46 @@ async function fileExists(path: string): Promise<boolean> {
   }
 }
 
+function generateRootTestCandidates(file: string, base: string): string[] {
+  // Search in top-level tests/ directory with mirrored structure
+  // e.g., packages/core/src/signals/foo.ts → tests/unit/signals/foo.test.ts
+  const parts = file.split('/');
+  const candidates: string[] = [];
+
+  // Try various depth combinations for tests/ directory
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const subPath = parts.slice(i, -1).join('/');
+    candidates.push(
+      join('tests', subPath, `${base}.test.ts`),
+      join('tests', subPath, `${base}.test.tsx`),
+      join('tests', 'unit', subPath, `${base}.test.ts`),
+      join('tests', 'unit', subPath, `${base}.test.tsx`),
+      join('tests', 'unit', `${base}.test.ts`),
+    );
+  }
+
+  return candidates;
+}
+
 async function findTestFile(hunk: DiffHunk, context: AnalysisContext): Promise<{ exists: boolean; modified: boolean }> {
   const lang = hunk.language;
   if (lang === 'unknown') return { exists: false, modified: false };
 
   const patternFn = TEST_FILE_PATTERNS[lang] ?? TEST_FILE_PATTERNS.typescript;
   const candidates = patternFn(hunk.file);
+
+  // Also search in repo-root-level tests/ directory
+  const ext = hunk.file.slice(hunk.file.lastIndexOf('.'));
+  const base = basename(hunk.file, ext);
+  candidates.push(...generateRootTestCandidates(hunk.file, base));
+
+  // Also check context.allFiles for fuzzy match (test file with matching base name)
+  const testFilePattern = new RegExp(`(test_|_test\\.|\\.(test|spec)\\.)(${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`);
+  for (const f of context.allFiles) {
+    if (testFilePattern.test(basename(f))) {
+      candidates.push(f);
+    }
+  }
 
   for (const candidate of candidates) {
     const absPath = join(context.repoRoot, candidate);
