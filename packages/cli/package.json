@@ -1,7 +1,7 @@
 {
   "name": "reviewscope",
   "version": "0.1.0",
-  "description": "Human Attention Router for Code Review — tells you which parts of a PR need human eyes",
+  "description": "Human Attention Router for Code Review \u2014 tells you which parts of a PR need human eyes",
   "type": "module",
   "bin": {
     "reviewscope": "dist/index.js"
@@ -13,7 +13,14 @@
     "build": "tsup",
     "dev": "tsup src/index.ts --format esm --dts --watch"
   },
-  "keywords": ["code-review", "attention", "diff", "cli", "pr", "github"],
+  "keywords": [
+    "code-review",
+    "attention",
+    "diff",
+    "cli",
+    "pr",
+    "github"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -23,5 +30,7 @@
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {}
+  "devDependencies": {
+    "@reviewscope/core": "0.1.0"
+  }
 }
