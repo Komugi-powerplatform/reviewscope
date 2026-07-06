@@ -1,6 +1,6 @@
 {
   "name": "reviewscope",
-  "description": "Human Attention Router for Code Review — tells you which parts of a PR need human eyes and which are safe to skip",
+  "description": "Human Attention Router for Code Review \u2014 tells you which parts of a PR need human eyes and which are safe to skip",
   "type": "module",
   "private": true,
   "engines": {
@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build -w @reviewscope/core && npm run build -w reviewscope",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit"
