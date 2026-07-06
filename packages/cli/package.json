@@ -1,6 +1,6 @@
 {
   "name": "reviewscope",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Human Attention Router for Code Review \u2014 tells you which parts of a PR need human eyes",
   "type": "module",
   "bin": {
