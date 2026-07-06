@@ -23,7 +23,5 @@
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {
-    "@reviewscope/core": "0.1.0"
-  }
+  "dependencies": {}
 }
