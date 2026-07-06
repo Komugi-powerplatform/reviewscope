@@ -4,6 +4,8 @@
 
 > Skip the imports. Focus on the logic changes. Save 40% of your review time.
 
+![ReviewScope demo](https://raw.githubusercontent.com/Komugi-powerplatform/reviewscope/main/docs/demo.gif)
+
 ```
 ReviewScope  3 of 14 hunks need human review (6 min)
              ██▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░  █ CRITICAL (1)  ▓ REVIEW (2)  ░ AUTO-OK (11)
